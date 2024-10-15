@@ -1,22 +1,44 @@
-import React, { useState } from 'react';
-import { Button, TextField, Container } from '@mui/material';
+import { useState } from 'react';
+import { Container, TextField, Button, Typography } from '@mui/material';
+import axios from 'axios';
 
 const Login = () => {
-    const [formData, setFormData] = useState({ username: '', password: '' });
+    const [formData, setFormData] = useState({
+        username: '',
+        password: '',
+    });
+
+    const [errorMessage, setErrorMessage] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+        }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // API request logic will be here
-        console.log(formData);
+        try {
+            const response = await axios.post('http://localhost:5000/api/login', formData);
+            if (response.status === 200) {
+                const { token } = response.data;
+                localStorage.setItem('authToken', token); // Save the JWT to localStorage
+                alert('Login successful!');
+                // Redirect the user to a different page or update the app state as needed
+            }
+        } catch (error) {
+            console.error('Error during login:', error);
+            setErrorMessage('Invalid username or password. Please try again.');
+        }
     };
 
     return (
-        <Container maxWidth="sm">
-            <h2>Login</h2>
+        <Container maxWidth="sm" style={{ marginTop: '50px' }}>
+            <Typography variant="h4" gutterBottom>
+                Login
+            </Typography>
             <form onSubmit={handleSubmit}>
                 <TextField
                     fullWidth
@@ -39,6 +61,7 @@ const Login = () => {
                     variant="outlined"
                     required
                 />
+                {errorMessage && <Typography color="error">{errorMessage}</Typography>}
                 <Button type="submit" variant="contained" color="primary" fullWidth>
                     Login
                 </Button>

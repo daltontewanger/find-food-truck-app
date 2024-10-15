@@ -1,12 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
 
 const FindFoodTruck = () => {
-    const [foodTrucks, setFoodTrucks] = useState([
-        { id: 1, name: 'Taco Fiesta', coordinates: [32.7157, -117.1611] },
-        { id: 2, name: 'Vegan Delight', coordinates: [32.719, -117.167] }
-    ]);
+    const [foodTrucks, setFoodTrucks] = useState([]);
+
+    useEffect(() => {
+        socket.on('locationUpdated', (data) => {
+            // Update the list of food trucks
+            setFoodTrucks((current) => [...current, data]);
+        });
+
+        return () => {
+            socket.off('locationUpdated');
+        };
+    }, []);
 
     return (
         <div>
@@ -16,11 +27,9 @@ const FindFoodTruck = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 />
-                {foodTrucks.map(truck => (
+                {foodTrucks.map((truck) => (
                     <Marker key={truck.id} position={truck.coordinates}>
-                        <Popup>
-                            {truck.name}
-                        </Popup>
+                        <Popup>{truck.name}</Popup>
                     </Marker>
                 ))}
             </MapContainer>
