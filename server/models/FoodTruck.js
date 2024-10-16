@@ -1,16 +1,19 @@
 const mongoose = require('mongoose');
-
-const foodTruckSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    schedule: [{ day: String, hours: String }],
-    foodTypes: [{ type: String }],
-    location: {
-        type: { type: String, enum: ['Point'], default: 'Point' },
-        coordinates: { type: [Number], index: '2dsphere' }
-    },
-    menuLink: { type: String }
+const ScheduleSchema = new mongoose.Schema({
+  address: String,
+  latitude: Number,
+  longitude: Number,
+  day: String,
+  startTime: String,
+  endTime: String,
 });
 
-const FoodTruck = mongoose.model('FoodTruck', foodTruckSchema);
-module.exports = FoodTruck;
+const FoodTruckSchema = new mongoose.Schema({
+  name: String,
+  description: String,
+  foodType: String,
+  menuLink: String,
+  schedules: [ScheduleSchema],
+});
+
+module.exports = mongoose.model('FoodTruck', FoodTruckSchema);
