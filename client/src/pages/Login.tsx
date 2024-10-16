@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Container, TextField, Button, Typography } from '@mui/material';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
@@ -9,6 +10,8 @@ const Login = () => {
     });
 
     const [errorMessage, setErrorMessage] = useState('');
+
+    const { login } = useAuth();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -23,8 +26,8 @@ const Login = () => {
         try {
             const response = await axios.post('http://localhost:5000/api/login', formData);
             if (response.status === 200) {
-                const { token } = response.data;
-                localStorage.setItem('authToken', token); // Save the JWT to localStorage
+                const { token, role, emailVerified } = response.data;
+                login(token, role, emailVerified);; // Save the JWT to localStorage
                 alert('Login successful!');
                 // Redirect the user to a different page or update the app state as needed
             }

@@ -1,40 +1,63 @@
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import io from 'socket.io-client';
+import axios from 'axios';
+import TheMap from '../components/TheMap';
+import { Container, TextField, Button, Typography } from '@mui/material';
 
-const socket = io('http://localhost:5000');
+interface TruckData {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  description: string;
+  foodType: string;
+}
 
-const FindFoodTruck = () => {
-    const [foodTrucks, setFoodTrucks] = useState([]);
+const FindFoodTruck: React.FC = () => {
+  const [trucks, setTrucks] = useState<TruckData[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
-    useEffect(() => {
-        socket.on('locationUpdated', (data) => {
-            // Update the list of food trucks
-            setFoodTrucks((current) => [...current, data]);
-        });
+  useEffect(() => {
+    // Fetch all trucks initially
+    const fetchTrucks = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/trucks');
+        setTrucks(response.data);
+      } catch (error) {
+        console.error('Error fetching food trucks:', error);
+      }
+    };
 
-        return () => {
-            socket.off('locationUpdated');
-        };
-    }, []);
+    fetchTrucks();
+  }, []);
 
-    return (
-        <div>
-            <h2>Find a Food Truck</h2>
-            <MapContainer center={[32.7157, -117.1611]} zoom={13} style={{ height: '400px', width: '100%' }}>
-                <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {foodTrucks.map((truck) => (
-                    <Marker key={truck.id} position={truck.coordinates}>
-                        <Popup>{truck.name}</Popup>
-                    </Marker>
-                ))}
-            </MapContainer>
-        </div>
+  const handleSearch = () => {
+    // Fetch trucks based on the search term
+    const filteredTrucks = trucks.filter(truck =>
+      truck.foodType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      truck.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    setTrucks(filteredTrucks);
+  };
+
+  return (
+    <Container maxWidth="md">
+      <Typography variant="h4" gutterBottom>
+        Find a Food Truck
+      </Typography>
+      <TextField
+        label="Search by food type or name"
+        variant="outlined"
+        fullWidth
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{ marginBottom: '20px' }}
+      />
+      <Button variant="contained" color="primary" onClick={handleSearch} style={{ marginBottom: '20px' }}>
+        Search
+      </Button>
+      <TheMap trucks={trucks} />
+    </Container>
+  );
 };
 
 export default FindFoodTruck;
