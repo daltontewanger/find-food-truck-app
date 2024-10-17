@@ -13,18 +13,16 @@ const UserSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ['user', 'business', 'admin'],
-    default: 'user',
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-    required: function () {
-      return this.role === 'business';
-    },
+    required: true,
   },
   emailVerified: {
     type: Boolean,
     default: false,
+  },
+  verificationStatus: {
+    type: String,
+    enum: ['unverified', 'pending', 'verified'],
+    default: 'unverified',
   },
 });
 
@@ -36,6 +34,4 @@ UserSchema.pre('save', function (next) {
   next();
 });
 
-const User = mongoose.model('User', UserSchema);
-
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);

@@ -14,29 +14,31 @@ interface TruckData {
 
 const FindFoodTruck: React.FC = () => {
   const [trucks, setTrucks] = useState<TruckData[]>([]);
+  const [filteredTrucks, setFilteredTrucks] = useState<TruckData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    // Fetch all trucks initially
-    const fetchTrucks = async () => {
+    // Fetch currently open trucks initially
+    const fetchOpenTrucks = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/trucks');
+        const response = await axios.get('http://localhost:5000/api/foodtruck/open');
         setTrucks(response.data);
+        setFilteredTrucks(response.data); // Set initial filtered trucks as well
       } catch (error) {
-        console.error('Error fetching food trucks:', error);
+        console.error('Error fetching open food trucks:', error);
       }
     };
 
-    fetchTrucks();
+    fetchOpenTrucks();
   }, []);
 
   const handleSearch = () => {
-    // Fetch trucks based on the search term
-    const filteredTrucks = trucks.filter(truck =>
+    // Filter trucks based on the search term
+    const filtered = trucks.filter((truck) =>
       truck.foodType.toLowerCase().includes(searchTerm.toLowerCase()) ||
       truck.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setTrucks(filteredTrucks);
+    setFilteredTrucks(filtered);
   };
 
   return (
@@ -55,7 +57,7 @@ const FindFoodTruck: React.FC = () => {
       <Button variant="contained" color="primary" onClick={handleSearch} style={{ marginBottom: '20px' }}>
         Search
       </Button>
-      <TheMap trucks={trucks} />
+      <TheMap trucks={filteredTrucks} />
     </Container>
   );
 };

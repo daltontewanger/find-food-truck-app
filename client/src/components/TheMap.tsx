@@ -15,11 +15,12 @@ interface MapComponentProps {
 const TheMap: React.FC<MapComponentProps> = ({ trucks }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
+  const markersLayerRef = useRef<L.LayerGroup | null>(null);
 
   useEffect(() => {
+    // Initialize the map on first render
     if (mapRef.current && !leafletMapRef.current) {
       leafletMapRef.current = L.map(mapRef.current).setView([32.7157, -117.1611], 12);
-
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(leafletMapRef.current);
@@ -28,9 +29,21 @@ const TheMap: React.FC<MapComponentProps> = ({ trucks }) => {
 
   useEffect(() => {
     if (leafletMapRef.current) {
-      trucks.forEach(truck => {
-        const marker = L.marker([truck.latitude, truck.longitude]).addTo(leafletMapRef.current!);
-        marker.bindPopup(`<b>${truck.name}</b><br>${truck.description}`).openPopup();
+      // Remove previous markers before adding new ones
+      if (markersLayerRef.current) {
+        markersLayerRef.current.clearLayers();
+      } else {
+        markersLayerRef.current = L.layerGroup().addTo(leafletMapRef.current);
+      }
+
+      // Add new markers for currently open trucks, validating coordinates
+      trucks.forEach((truck) => {
+        if (truck.latitude !== undefined && truck.longitude !== undefined) {
+          const marker = L.marker([truck.latitude, truck.longitude]).addTo(markersLayerRef.current!);
+          marker.bindPopup(`<b>${truck.name}</b><br>${truck.description}`);
+        } else {
+          console.warn(`Skipping truck with id ${truck.id} due to missing coordinates`);
+        }
       });
     }
   }, [trucks]);

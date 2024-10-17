@@ -24,7 +24,7 @@ const Login = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:5000/api/login', formData);
+            const response = await axios.post('http://localhost:5000/api/auth/login', formData);
             if (response.status === 200) {
                 const { token, role, emailVerified } = response.data;
                 login(token, role, emailVerified);; // Save the JWT to localStorage
