@@ -1,48 +1,44 @@
-require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const http = require('http');
-const socketIo = require('socket.io');
-const apiRoutes = require('./routes/api');
-const connectDB = require('./config/db');
+const { Server } = require('socket.io');
+const dotenv = require('dotenv');
+
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const foodTruckRoutes = require('./routes/foodTruckRoutes');
+const { initSocket } = require('./utils/socket');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"]
-    }
+
+// Initialize Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_ORIGIN,
+    methods: ['GET', 'POST'],
+  },
 });
-
-const PORT = process.env.PORT || 5000;
-
-// Connect to MongoDB
-connectDB();
+initSocket(io);
 
 // Middleware
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: process.env.CLIENT_ORIGIN }));
 app.use(express.json());
 
-// Socket.io setup
-io.on('connection', (socket) => {
-    console.log('New client connected');
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/foodtruck', foodTruckRoutes);
 
-    socket.on('updateLocation', (data) => {
-        // Broadcast updated truck info to all clients
-        io.emit('locationUpdated', data);
-    });
+// Database Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch((err) => console.error('Failed to connect to MongoDB', err));
 
-    socket.on('disconnect', () => {
-        console.log('Client disconnected');
-    });
-});
-
-// API Routes
-app.use('/api', apiRoutes);
-
-// Start server
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Server Listening
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -2,49 +2,30 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Handle user sign-up
-exports.signup = async (req, res) => {
-    const { username, password, role } = req.body;
-
-    try {
-        const user = await User.findOne({ username });
-        if (user) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-
-        user = new User({ username, password: await bcrypt.hash(password, 10), role });
-        await user.save();
-
-        res.status(201).json({ message: 'User successfully registered' });
-    } catch (error) {
-        console.error('Sign-Up Error:', error);
-        res.status(500).json({ message: 'Server error' });
+exports.getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
-// Handle user login
-exports.login = async (req, res) => {
+exports.updateUserProfile = async (req, res) => {
+  try {
     const { username, password } = req.body;
+    const updates = {};
+    if (username) updates.username = username;
+    if (password) updates.password = await bcrypt.hash(password, 10);
 
-    try {
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign(
-            { userId: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        );
-        res.status(200).json({ token, role: user.role, emailVerified: user.emailVerified });
-    } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    const updatedUser = await User.findByIdAndUpdate(req.user.userId, updates, { new: true });
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };

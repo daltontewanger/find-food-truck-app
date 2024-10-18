@@ -30,7 +30,7 @@ const SignUp = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:5000/api/signup', formData);
+            const response = await axios.post('http://localhost:5000/api/auth/signup', formData);
             if (response.status === 201) {
                 alert('User successfully registered! Please log in.');
                 setFormData({ username: '', password: '', role: 'user' }); // Reset form
