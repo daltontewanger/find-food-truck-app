@@ -49,11 +49,6 @@ const FoodTruckSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
-  verificationStatus: {
-    type: String,
-    enum: ['pending', 'verified'],
-    default: 'pending',
-  },
   schedules: {
     type: [ScheduleSchema],
     default: [], // Default empty schedule

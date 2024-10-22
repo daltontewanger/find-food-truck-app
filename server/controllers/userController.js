@@ -17,9 +17,9 @@ exports.getUserProfile = async (req, res) => {
 
 exports.updateUserProfile = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     const updates = {};
-    if (username) updates.username = username;
+    if (email) updates.email = email;
     if (password) updates.password = await bcrypt.hash(password, 10);
 
     const updatedUser = await User.findByIdAndUpdate(req.user.userId, updates, { new: true });

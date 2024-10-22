@@ -1,4 +1,5 @@
 const FoodTruck = require('../models/FoodTruck');
+const User = require('../models/User');
 const { geocodeAddress } = require('../utils/geocode');
 const dayjs = require('dayjs');
 
@@ -88,26 +89,38 @@ exports.getFoodTruckDetails = async (req, res) => {
 };
 
 exports.updateDetails = async (req, res) => {
-    const { role, verificationStatus, userId } = req.user;
+    const { role, verificationStatus, userId, emailVerified } = req.user;
 
-    console.log('User Role:', role); // This should now print the correct role
-    console.log('Verification Status:', verificationStatus);
-    console.log('User ID:', userId);
-
+    // Check if the user is a business
     if (role !== 'business') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
-    if (verificationStatus !== 'verified') {
-        return res.status(403).json({ message: 'Business not verified. Please wait for admin approval.' });
+
+    // Check if the email is verified
+    if (emailVerified !== true) {
+        return res.status(403).json({ message: 'Business not verified. Please verify your email first.' });
     }
 
     try {
         const { name, description, foodType, menuLink } = req.body;
+
+        // Update the food truck details
         const updatedFoodTruck = await FoodTruck.findOneAndUpdate(
             { owner: userId },
             { name, description, foodType, menuLink },
             { new: true }
         );
+
+        // If the current verification status is 'rejected', update it to 'pending' after resubmission
+        if (verificationStatus === 'rejected') {
+            const user = await User.findById(userId);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            user.verificationStatus = 'pending';
+            await user.save();
+        }
 
         res.status(200).json(updatedFoodTruck);
     } catch (error) {
