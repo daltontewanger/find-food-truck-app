@@ -1,8 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { jwtDecode } from "jwt-decode";
 
 interface AuthContextProps {
   emailVerified: boolean;
   userRole: string;
+  getUserId: () => string | null;
   login: (authToken: string, role: string,  emailVerifiedStatus: boolean) => void;
   logout: () => void;
 }
@@ -45,13 +47,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  const getUserId = () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      try {
+        const decodedToken: any = jwtDecode(token);
+        return decodedToken.userId;
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   const login = (authToken: string, role: string, emailVerifiedStatus: boolean) => {
     localStorage.setItem('authToken', authToken);
     localStorage.setItem('role', role);
     localStorage.setItem('emailVerified', String(emailVerifiedStatus));
     setEmailVerified(emailVerifiedStatus);
     setUserRole(role);
-    console.log("User logged in: ", authToken, role);
   };
 
   const logout = () => {
@@ -63,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ emailVerified, userRole, login, logout }}>
+    <AuthContext.Provider value={{ emailVerified, userRole, getUserId, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

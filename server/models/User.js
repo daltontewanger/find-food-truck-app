@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  username: {
+  email: {
     type: String,
     required: true,
     unique: true,
@@ -21,8 +21,11 @@ const UserSchema = new mongoose.Schema({
   },
   verificationStatus: {
     type: String,
-    enum: ['unverified', 'pending', 'verified'],
+    enum: ['unverified', 'pending', 'verified', 'rejected'],
     default: 'unverified',
+  },
+  rejectionNote: {
+    type: String,
   },
 });
 

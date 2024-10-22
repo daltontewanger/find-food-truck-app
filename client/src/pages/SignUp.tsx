@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Container, TextField, Button, Typography, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent } from '@mui/material';
+import { Container, TextField, Button, Typography, Select, MenuItem, FormControl, InputLabel, SelectChangeEvent, Alert } from '@mui/material';
 import axios from 'axios';
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: '',
         role: 'user', // default role is 'user'
     });
@@ -27,17 +27,33 @@ const SignUp = () => {
         }));
     };
 
+    const isEmailValid = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!formData.email || !formData.password || !formData.role) {
+            setErrorMessage('All fields are required.');
+            return;
+        }
+
+        if (!isEmailValid(formData.email)) {
+            setErrorMessage('Please enter a valid email address.');
+            return;
+        }
+
         try {
             const response = await axios.post('http://localhost:5000/api/auth/signup', formData);
             if (response.status === 201) {
-                alert('User successfully registered! Please log in.');
-                setFormData({ username: '', password: '', role: 'user' }); // Reset form
+                alert('User successfully registered! Please check your email to verify your account.');
+                setFormData({ email: '', password: '', role: 'user' }); // Reset form
+                setErrorMessage('');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error during sign-up:', error);
-            setErrorMessage('Failed to register user. Please try again.');
+            setErrorMessage(error.response?.data?.message || 'Failed to register user. Please try again.');
         }
     };
 
@@ -49,9 +65,9 @@ const SignUp = () => {
             <form onSubmit={handleSubmit}>
                 <TextField
                     fullWidth
-                    label="Username"
-                    name="username"
-                    value={formData.username}
+                    label="Email Address"
+                    name="email"
+                    value={formData.email}
                     onChange={handleTextFieldChange}
                     margin="normal"
                     variant="outlined"
@@ -80,7 +96,11 @@ const SignUp = () => {
                         <MenuItem value="business">Business</MenuItem>
                     </Select>
                 </FormControl>
-                {errorMessage && <Typography color="error">{errorMessage}</Typography>}
+                {errorMessage && (
+                    <Alert severity="error" style={{ marginBottom: '20px' }}>
+                        {errorMessage}
+                    </Alert>
+                )}
                 <Button type="submit" variant="contained" color="primary" fullWidth>
                     Sign Up
                 </Button>

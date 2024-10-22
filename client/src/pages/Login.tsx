@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { Container, TextField, Button, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: '',
     });
 
     const [errorMessage, setErrorMessage] = useState('');
 
     const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -23,17 +25,33 @@ const Login = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+    
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+            const response = await axios.post(
+                'http://localhost:5000/api/auth/login',
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'application/json', // Explicitly set the Content-Type header
+                    },
+                }
+            );
+    
             if (response.status === 200) {
                 const { token, role, emailVerified } = response.data;
-                login(token, role, emailVerified);; // Save the JWT to localStorage
+    
+                login(token, role, emailVerified); // Save the JWT to localStorage
                 alert('Login successful!');
-                // Redirect the user to a different page or update the app state as needed
+                navigate('/find-food-truck');
             }
         } catch (error) {
-            console.error('Error during login:', error);
-            setErrorMessage('Invalid username or password. Please try again.');
+            if (axios.isAxiosError(error) && error.response) {
+                console.error('Axios error response:', error.response.data); // Log specific error details from Axios response
+            } else {
+                console.error('Error during login:', error);
+            }
+    
+            setErrorMessage('Invalid email or password. Please try again.');
         }
     };
 
@@ -45,13 +63,14 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
                 <TextField
                     fullWidth
-                    label="Username"
-                    name="username"
-                    value={formData.username}
+                    label="Email"
+                    name="email"
+                    value={formData.email}
                     onChange={handleChange}
                     margin="normal"
                     variant="outlined"
                     required
+                    type="email"
                 />
                 <TextField
                     fullWidth
