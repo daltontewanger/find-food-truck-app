@@ -8,7 +8,6 @@ module.exports = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded token:', decoded); // Add this log
     req.user = decoded;
     next();
   } catch (error) {

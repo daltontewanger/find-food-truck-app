@@ -10,7 +10,6 @@ const oAuth2Client = new google.auth.OAuth2(
 
 // Set credentials with refresh token
 if (process.env.REFRESH_TOKEN) {
-    console.log('Setting Refresh Token:', process.env.REFRESH_TOKEN); // Debug log for refresh token
     oAuth2Client.setCredentials({
         refresh_token: process.env.REFRESH_TOKEN,
     });
