@@ -30,7 +30,6 @@ exports.getOpenFoodTrucks = async (req, res) => {
                     endTime: { $gte: currentTime }
                 }
             },
-            verificationStatus: 'verified'
         });
 
         // Extract the relevant schedule information for each truck
@@ -130,50 +129,69 @@ exports.updateDetails = async (req, res) => {
 };
 
 exports.updateSchedule = async (req, res) => {
-    const { role, verificationStatus } = req.user;
+    const { role, verificationStatus, userId } = req.user;
+
+    // Verify if the user is a business and has proper verification
     if (role !== 'business') {
         return res.status(403).json({ message: 'Unauthorized' });
     }
     if (verificationStatus !== 'verified') {
-        return res.status(403).json({ message: 'Business not verified. Please wait for admin approval.' });
+        return res.status(403).json({ message: 'Business not fully verified. Please wait for admin approval.' });
     }
 
     try {
-        const schedules = req.body.schedule;
-    
-        // Validate and format the schedules
-        const updatedSchedules = [];
-    
-        for (let schedule of schedules) {
-          const { address, date, startTime, endTime } = schedule;
-    
-          if (!date || isNaN(Date.parse(day))) {
-            return res.status(400).json({ message: 'Invalid day value provided' });
-          }
-    
-          // Geocode the address to get latitude and longitude
-          const { latitude, longitude } = await geocodeAddress(address);
-    
-          updatedSchedules.push({
-            date, // Use the day as received (YYYY-MM-DD)
-            startTime,
-            endTime,
-            address,
-            latitude,
-            longitude,
-          });
+        const { schedule } = req.body;
+
+        if (!Array.isArray(schedule) || schedule.length === 0) {
+            return res.status(400).json({ message: 'Invalid schedule format or no schedule provided' });
         }
-    
+
+        const updatedSchedules = [];
+
+        for (let item of schedule) {
+            const { address, date, startTime, endTime } = item;
+
+            // Validate the day
+            if (!date || isNaN(Date.parse(date))) {
+                return res.status(400).json({ message: 'Invalid date value provided' });
+            }
+
+            if (!address) {
+                return res.status(400).json({ message: 'Address is required for all schedules' });
+            }
+
+            // Geocode the address to get latitude and longitude
+            const geocoded = await geocodeAddress(address);
+            if (!geocoded) {
+                return res.status(400).json({ message: `Could not find coordinates for address: ${address}` });
+            }
+            const { latitude, longitude } = geocoded;
+
+            // Add formatted schedule to array
+            updatedSchedules.push({
+                date, // Use the date as received (YYYY-MM-DD)
+                startTime,
+                endTime,
+                address,
+                latitude,
+                longitude,
+            });
+        }
+
         // Update the food truck with the new schedules
         const updatedFoodTruck = await FoodTruck.findOneAndUpdate(
-          { owner: req.user.userId },
-          { schedules: updatedSchedules },
-          { new: true }
+            { owner: userId },
+            { schedules: updatedSchedules },
+            { new: true }
         );
-    
+
+        if (!updatedFoodTruck) {
+            return res.status(404).json({ message: 'Food truck not found' });
+        }
+
         res.status(200).json(updatedFoodTruck);
-      } catch (error) {
+    } catch (error) {
         console.error('Error updating schedule:', error);
         res.status(500).json({ message: 'Server error' });
-      }
-    };
+    }
+};

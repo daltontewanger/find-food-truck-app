@@ -125,7 +125,7 @@ exports.login = async (req, res) => {
                 verificationStatus: user.verificationStatus,
             },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: '4h' }
         );
 
         res.status(200).json({ token, role: user.role, emailVerified: user.emailVerified });

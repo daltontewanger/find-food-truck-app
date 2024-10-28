@@ -12,12 +12,12 @@ const BusinessDashboard: React.FC = () => {
     const [description, setDescription] = useState('');
     const [foodType, setFoodType] = useState('');
     const [menuLink, setMenuLink] = useState('');
-    const [schedule, setSchedule] = useState([{ address: '', day: '', startTime: '', endTime: '' }]);
+    const [schedule, setSchedule] = useState([{ address: '', date: '', startTime: '', endTime: '' }]);
     const [loading, setLoading] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState('');
     const [rejectionNote, setRejectionNote] = useState('');
     const [openModal, setOpenModal] = useState(false);
-
+    
     useEffect(() => {
         const fetchDetails = async () => {
             if (userRole !== 'business' || !emailVerified) {
@@ -58,7 +58,7 @@ const BusinessDashboard: React.FC = () => {
                     setDescription(description || '');
                     setFoodType(foodType || '');
                     setMenuLink(menuLink || '');
-                    setSchedule(schedules.length > 0 ? schedules : [{ address: '', day: '', startTime: '', endTime: '' }]);
+                    setSchedule(schedules.length > 0 ? schedules : [{ address: '', date: '', startTime: '', endTime: '' }]);
                 }
             } catch (error) {
                 console.error('Error fetching details:', error);
@@ -72,10 +72,10 @@ const BusinessDashboard: React.FC = () => {
     }, [userRole, emailVerified]);
 
     const handleAddSchedule = () => {
-        setSchedule([...schedule, { address: '', day: '', startTime: '', endTime: '' }]);
+        setSchedule([...schedule, { address: '', date: '', startTime: '', endTime: '' }]);
     };
 
-    const handleScheduleChange = (index: number, field: string, value: string) => {
+    const handleScheduleChange = (index: number, field: string, value: any) => {
         const updatedSchedule = schedule.map((item, i) =>
             i === index ? { ...item, [field]: value } : item
         );
@@ -97,13 +97,13 @@ const BusinessDashboard: React.FC = () => {
             alert('You must have a verified email to update your food truck information.');
             return;
         }
-    
+
         const userId = getUserId();
         if (!userId) {
             alert('User ID is missing. Please try logging in again.');
             return;
         }
-    
+
         try {
             const token = localStorage.getItem('authToken');
             const response = await axios.post(
@@ -163,10 +163,19 @@ const BusinessDashboard: React.FC = () => {
 
         try {
             const token = localStorage.getItem('authToken');
+
+            // Ensure schedule format is correct before sending
+            const formattedSchedule = schedule.map((item) => ({
+                address: item.address,
+                date: item.date, // Should be in 'YYYY-MM-DD' format
+                startTime: item.startTime,
+                endTime: item.endTime,
+            }));
+
             const response = await axios.post(
                 'http://localhost:5000/api/foodtruck/update-schedule',
                 {
-                    schedule,
+                    schedule: formattedSchedule,
                 },
                 {
                     headers: {
@@ -174,6 +183,7 @@ const BusinessDashboard: React.FC = () => {
                     },
                 }
             );
+
             if (response.status === 200) {
                 alert('Schedule updated successfully!');
             }
@@ -256,8 +266,8 @@ const BusinessDashboard: React.FC = () => {
                         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                             <DatePicker
                                 label="Date"
-                                value={item.day ? dayjs(item.day) : null}
-                                onChange={(newValue) => handleScheduleChange(index, 'day', newValue ? newValue.format('YYYY-MM-DD') : '')}
+                                value={item.date ? dayjs(item.date) : null}
+                                onChange={(newValue) => handleScheduleChange(index, 'date', newValue ? newValue.format('YYYY-MM-DD') : '')}
                                 sx={{ flex: 1 }}
                             />
                             <TimePicker
