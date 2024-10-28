@@ -18,8 +18,9 @@
     "express": "^4.21.1",
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.7.2",
-    "nodemailer": "^6.9.15",
-    "socket.io": "^4.8.0"
+    "module-alias": "^2.2.3",
+    "mongoose": "^8.7.3",
+    "nodemailer": "^6.9.16",
+    "socket.io": "^4.8.1"
   }
 }
