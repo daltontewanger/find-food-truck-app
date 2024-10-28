@@ -1,3 +1,7 @@
+// Module-alias used to removed deprecation warnings for punycode
+const moduleAlias = require('module-alias');
+moduleAlias.addAlias('punycode', 'punycode/');
+
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
@@ -34,11 +38,36 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/foodtruck', foodTruckRoutes);
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('Failed to connect to MongoDB', err));
+// Mongoose Connection Setup with Stable API version options
+const clientOptions = {
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  },
+};
 
-// Server Listening
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+async function connectToDatabase() {
+  try {
+    // Create a Mongoose connection using the recommended Stable API version
+    await mongoose.connect(process.env.MONGO_URI, clientOptions);
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+    // Start the server after a successful database connection
+    const PORT = process.env.PORT || 5000;
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  } catch (err) {
+    console.error('Failed to connect to MongoDB', err);
+    process.exit(1); // Exit the process if the database connection fails
+  }
+}
+
+connectToDatabase();
+
+// Ensure the client will close when the process is terminated
+process.on('SIGINT', async () => {
+  await mongoose.disconnect();
+  console.log('MongoDB connection closed');
+  process.exit(0);
+});
