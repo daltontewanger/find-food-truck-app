@@ -19,6 +19,9 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  emailVerificationExpiry: {
+    type: Date,
+  },
   verificationStatus: {
     type: String,
     enum: ['unverified', 'pending', 'verified', 'rejected'],

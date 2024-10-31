@@ -19,8 +19,6 @@ if (process.env.REFRESH_TOKEN) {
 
 const sendVerificationEmail = async (email, token) => {
     try {
-        console.log('Attempting to get access token...');
-        
         // Get access token using the refresh token
         const accessTokenResponse = await oAuth2Client.getAccessToken();
         const accessToken = accessTokenResponse?.token;
@@ -48,7 +46,11 @@ const sendVerificationEmail = async (email, token) => {
             from: process.env.EMAIL_USER,
             to: email,
             subject: 'Verify Your Email Address',
-            html: `<p>Thank you for signing up. Please verify your email by clicking the link below:</p><p><a href="${verificationUrl}">Verify Email</a></p>`,
+            html: `
+            <p>Thank you for signing up. Please verify your email by clicking the link below:</p>
+            <p><a href="${verificationUrl}">Verify Email</a></p>
+            <p>This link will expire in 12 hours.</p>
+            `,
         };
 
         // Send the verification email

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CircularProgress, Container, Typography, Button } from '@mui/material';
+import { CircularProgress, Container, Typography, Button, TextField } from '@mui/material';
 import axios from 'axios';
 
 const VerifyEmail: React.FC = () => {
     const { token } = useParams<{ token: string }>();
-    const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'failed'>('loading');
+    const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'failed' | 'expired'>('loading');
+    const [email, setEmail] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -15,9 +16,13 @@ const VerifyEmail: React.FC = () => {
                 if (response.status === 200) {
                     setVerificationStatus('success');
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Verification error:', error);
-                setVerificationStatus('failed');
+                if (error.response && error.response.data.message === 'Verification link has expired. Please request a new one.') {
+                    setVerificationStatus('expired');
+                } else {
+                    setVerificationStatus('failed');
+                }
             }
         };
 
@@ -27,6 +32,19 @@ const VerifyEmail: React.FC = () => {
             setVerificationStatus('failed');
         }
     }, [token]);
+
+    const handleResendVerificationEmail = async () => {
+        try {
+            const response = await axios.post('http://localhost:5000/api/auth/resend-verification', { email });
+            if (response.status === 200) {
+                alert('A new verification email has been sent to your email address. Please check your inbox.');
+            }
+        } catch (error) {
+            console.error('Error resending verification email:', error);
+            alert('Failed to resend verification email. Please check the email address and try again.');
+        }
+    };
+
 
     return (
         <Container maxWidth="sm" style={{ marginTop: '50px', textAlign: 'center' }}>
@@ -59,10 +77,32 @@ const VerifyEmail: React.FC = () => {
                         Verification Failed
                     </Typography>
                     <Typography variant="body1" style={{ marginBottom: '20px' }}>
-                        The link may be invalid or expired. Please check your email and try again.
+                        The link may be invalid. Please check your email and try again.
                     </Typography>
                     <Button variant="contained" color="primary" onClick={() => navigate('/signup')}>
                         Go to Signup
+                    </Button>
+                </>
+            )}
+
+            {verificationStatus === 'expired' && (
+                <>
+                    <Typography variant="h4" gutterBottom color="error">
+                        Verification Link Expired
+                    </Typography>
+                    <Typography variant="body1" style={{ marginBottom: '20px' }}>
+                        The verification link has expired. Please enter your email address below to receive a new verification link.
+                    </Typography>
+                    <TextField
+                        label="Email Address"
+                        variant="outlined"
+                        fullWidth
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{ marginBottom: '20px' }}
+                    />
+                    <Button variant="contained" color="primary" onClick={handleResendVerificationEmail} style={{ marginBottom: '20px' }}>
+                        Resend Verification Email
                     </Button>
                 </>
             )}
