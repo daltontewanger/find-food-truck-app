@@ -25,32 +25,39 @@ const Login = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-    
+
         try {
             const response = await axios.post(
                 'http://localhost:5000/api/auth/login',
                 formData,
                 {
                     headers: {
-                        'Content-Type': 'application/json', // Explicitly set the Content-Type header
+                        'Content-Type': 'application/json',
                     },
                 }
             );
-    
+
             if (response.status === 200) {
                 const { token, role, emailVerified } = response.data;
-    
+
                 login(token, role, emailVerified); // Save the JWT to localStorage
                 alert('Login successful!');
-                navigate('/find-food-truck');
+                // Navigate based on user role
+                if (role === 'user') {
+                    navigate('/find-food-truck');
+                } else if (role === 'business') {
+                    navigate('/business-dashboard');
+                } else if (role === 'admin') {
+                    navigate('/admin-dashboard');
+                }
             }
         } catch (error) {
             if (axios.isAxiosError(error) && error.response) {
-                console.error('Axios error response:', error.response.data); // Log specific error details from Axios response
+                console.error('Axios error response:', error.response.data);
             } else {
                 console.error('Error during login:', error);
             }
-    
+
             setErrorMessage('Invalid email or password. Please try again.');
         }
     };

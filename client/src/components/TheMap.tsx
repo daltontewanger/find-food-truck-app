@@ -8,11 +8,22 @@ interface MapComponentProps {
     name: string;
     latitude: number;
     longitude: number;
+    menuLink: string;
     description: string;
+    foodType: string;
   }>;
+  onMarkerClick: (truck: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    menuLink: string;
+    description: string;
+    foodType: string;
+  }) => void;
 }
 
-const TheMap: React.FC<MapComponentProps> = ({ trucks }) => {
+const TheMap: React.FC<MapComponentProps> = ({ trucks, onMarkerClick  }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -40,13 +51,25 @@ const TheMap: React.FC<MapComponentProps> = ({ trucks }) => {
       trucks.forEach((truck) => {
         if (truck.latitude !== undefined && truck.longitude !== undefined) {
           const marker = L.marker([truck.latitude, truck.longitude]).addTo(markersLayerRef.current!);
-          marker.bindPopup(`<b>${truck.name}</b><br>${truck.description}`);
+          marker.bindPopup(`
+            <b>${truck.name}</b><br>
+            <a href="${truck.menuLink}" target="_blank">Click To View Our Menu</a><br>
+            <button onclick="window.dispatchEvent(new CustomEvent('truckClick', { detail: '${truck.id}' }))">See Full Info</button>
+          `);
+
+          marker.on('popupopen', () => {
+            window.addEventListener('truckClick', (e: any) => {
+              if (e.detail === truck.id) {
+                onMarkerClick(truck);
+              }
+            });
+          });
         } else {
           console.warn(`Skipping truck with id ${truck.id} due to missing coordinates`);
         }
       });
     }
-  }, [trucks]);
+  }, [trucks, onMarkerClick]);
 
   return <div id="map" ref={mapRef} style={{ height: '500px', width: '100%' }} />;
 };
